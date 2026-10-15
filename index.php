@@ -47,7 +47,6 @@ foreach ($prodi as $p) {
 
 }
 
-
 // ======================================================
 // PRODI DIPILIH
 // ======================================================
@@ -55,15 +54,89 @@ foreach ($prodi as $p) {
 $prodi_dipilih = null;
 
 if (isset($_GET["prodi"])) {
-
     $index = (int) $_GET["prodi"];
 
     if (isset($prodi[$index])) {
         $prodi_dipilih = $prodi[$index];
     }
-
 }
 
+
+// ======================================================
+// DATA HISTORIS MAHASISWA PER PRODI
+// ======================================================
+
+$periode_historis = [
+    '20211' => '2021 (Ganjil)',
+    '20221' => '2022 (Ganjil)',
+    '20231' => '2023 (Ganjil)',
+    '20241' => '2024 (Ganjil)',
+    '20251' => '2025 (Ganjil)'
+];
+
+$riwayat_mahasiswa = [];
+
+foreach ($periode_historis as $kode => $label) {
+    $riwayat_mahasiswa[$kode] = null;
+}
+
+$file_historis = __DIR__ . '/data_historis.json';
+
+if ($prodi_dipilih !== null && file_exists($file_historis)) {
+    $data_historis = json_decode(
+        file_get_contents($file_historis),
+        true
+    );
+
+    if (is_array($data_historis)) {
+        $kode_dipilih = (string) (
+            $prodi_dipilih['kode_prodi'] ?? ''
+        );
+
+        $nama_dipilih = strtolower(trim(
+            $prodi_dipilih['nama_prodi'] ?? ''
+        ));
+
+        $jenjang_dipilih = strtolower(trim(
+            $prodi_dipilih['jenjang_prodi'] ?? ''
+        ));
+
+        foreach ($periode_historis as $kode_periode => $label) {
+            foreach (($data_historis[$kode_periode] ?? []) as $item) {
+                $kode_item = (string) ($item['kode_prodi'] ?? '');
+
+                $nama_item = strtolower(trim(
+                    $item['nama_prodi'] ?? ''
+                ));
+
+                $jenjang_item = strtolower(trim(
+                    $item['jenjang_prodi'] ?? ''
+                ));
+
+                $cocok_kode = (
+                    $kode_dipilih !== '' &&
+                    $kode_item !== '' &&
+                    $kode_dipilih === $kode_item
+                );
+
+                $cocok_nama = (
+                    $nama_dipilih !== '' &&
+                    $nama_dipilih === $nama_item &&
+                    $jenjang_dipilih === $jenjang_item
+                );
+
+                if ($cocok_kode || $cocok_nama) {
+                    if (array_key_exists('jumlah_mahasiswa', $item)) {
+                        $riwayat_mahasiswa[$kode_periode] =
+                            (int) $item['jumlah_mahasiswa'];
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+}
 
 // ======================================================
 // FILTER
@@ -1080,6 +1153,63 @@ Jumlah Dosen
 
 </div>
 
+<div class="detail-table" style="margin-bottom:25px;">
+
+    <h3>Riwayat Jumlah Mahasiswa per Tahun</h3>
+    <p style="color:#64748b; margin-bottom:18px;">
+        Data mahasiswa berdasarkan semester ganjil
+        dari tahun 2021 sampai 2025.
+    </p>
+	<a
+		href="unduh_historis.php?prodi=<?= (int)($_GET['prodi'] ?? -1) ?>"
+		class="btn btn-primary"
+		style="margin:0 0 20px 0;"
+	>
+		📥 Unduh Excel (CSV)
+	</a>
+
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#eff6ff;">
+                    <th style="padding:13px; text-align:left;">
+                        Periode
+                    </th>
+                    <th style="padding:13px; text-align:right;">
+                        Jumlah Mahasiswa
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <?php foreach ($periode_historis as $kode => $label): ?>
+                <tr>
+                    <td style="padding:13px; border-bottom:1px solid #edf0f4;">
+                        <?= htmlspecialchars($label) ?>
+                    </td>
+
+                    <td style="padding:13px; text-align:right; border-bottom:1px solid #edf0f4; font-weight:700;">
+                        <?php
+                        $jumlah = $riwayat_mahasiswa[$kode];
+
+                        echo $jumlah === null
+                            ? '-'
+                            : number_format($jumlah, 0, ',', '.');
+                        ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <p style="color:#64748b; font-size:12px; margin-top:12px;">
+        Angka 0 menunjukkan nilai nol pada data historis.
+        Tanda '-' menunjukkan data periode tersebut tidak ditemukan.
+    </p>
+
+</div>
+
 
 <div class="detail-table">
 
@@ -1151,17 +1281,26 @@ $label = ucwords(
 
 <div class="section">
 
+
 <div class="section-header">
 
-<h2>
-📚 Daftar Program Studi
-</h2>
+    <h2>
+        📚 Daftar Program Studi
+    </h2>
 
-<p>
-Pilih program studi untuk melihat informasi lengkap.
-</p>
+    <p>
+        Pilih program studi untuk melihat informasi lengkap.
+    </p>
+
+    <a
+        href="historis.php"
+        class="btn btn-primary"
+    >
+        📊 Lihat Data Historis Mahasiswa →
+    </a>
 
 </div>
+
 
 
 <div class="filter-box">
