@@ -1,6 +1,0 @@
-.git
-.gitignore
-*.tmp
-*.log
-main
-.env
