@@ -90,11 +90,18 @@ $nama_file = preg_replace(
     $prodi['nama_prodi'] ?? 'program_studi'
 );
 
+if (ob_get_level()) {
+    ob_end_clean();
+}
+
 header('Content-Type: text/csv; charset=UTF-8');
 header(
     'Content-Disposition: attachment; filename="Riwayat_' .
     $nama_file . '.csv"'
 );
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 // Buat file CSV yang dapat dibuka di Excel
 $output = fopen('php://output', 'w');
